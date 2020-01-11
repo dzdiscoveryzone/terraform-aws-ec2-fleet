@@ -69,7 +69,7 @@ func TestVPC(t *testing.T) {
 		}
 	})
 
-	// TODO: Check to see if a subnet is public or private, possibly based off tags?
+	// checkIsSubnetPublic checks whether or not a subnet is public and will rule out any private subnet by using the helper function skipPrivateSubnets
 	checkIsSubnetPublic(t, subnets, awsRegion)
 
 	vpcTagsInjected := terraformOptions.Vars["default_tags"]
