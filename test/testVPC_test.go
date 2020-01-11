@@ -52,10 +52,8 @@ func TestVPC(t *testing.T) {
 	terraform.InitAndApply(t, terraformOptions)
 
 	vpcID := terraform.Output(t, terraformOptions, "vpc_id")
-	vpcRegion := (terraformOptions.Vars["region"]).(string)
-
-	vpc := aws.GetVpcById(t, vpcID, vpcRegion)
-	t.Run("Correct VPC ID", func(t *testing.T) {
+	vpc := aws.GetVpcById(t, vpcID, awsRegion)
+	t.Run("Check VPC ID", func(t *testing.T) {
 		if vpc.Id != vpcID {
 			t.Errorf("VPC ID incorrect. got: %v, want: %v\n", vpc.Id, vpcID)
 		}
@@ -69,15 +67,7 @@ func TestVPC(t *testing.T) {
 	})
 
 	// TODO: Check to see if a subnet is public or private, possibly based off tags?
-
-	t.Run("Check if subnets are public", func(t *testing.T) {
-		for _, subnet := range subnets {
-			subnetIsPublic := aws.IsPublicSubnet(t, subnet.Id, awsRegion)
-			if !subnetIsPublic {
-				t.Errorf("subnet %s is not public. got: %t, want: %t", subnet.Id, subnetIsPublic, true)
-			}
-		}
-	})
+	checkIsSubnetPublic(t, subnets, awsRegion)
 
 	vpcTagsInjected := terraformOptions.Vars["default_tags"]
 	t.Run("Check VPC tag Name", func(t *testing.T) {
@@ -88,6 +78,19 @@ func TestVPC(t *testing.T) {
 			nameTag := fmt.Sprintf("%s-vpc", vpcTagsMap["Environment"])
 			if nameTag != vpc.Name {
 				t.Errorf("incorrect tag value for Name, got: %v, want: %v\n", vpcTagName, vpc.Name)
+			}
+		}
+	})
+}
+
+func checkIsSubnetPublic(t *testing.T, subnets []aws.Subnet, region string) {
+	t.Helper()
+	t.Run("Check if subnets are public", func(t *testing.T) {
+		for _, subnet := range subnets {
+			t.Logf("subnet: %v", subnet)
+			subnetIsPublic := aws.IsPublicSubnet(t, subnet.Id, region)
+			if !subnetIsPublic {
+				t.Errorf("subnet %s is not public. got: %t, want: %t", subnet.Id, subnetIsPublic, true)
 			}
 		}
 	})
