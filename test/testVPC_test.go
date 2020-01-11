@@ -2,7 +2,10 @@ package main
 
 import (
 	"fmt"
+	"strings"
 	"testing"
+
+	"github.com/aws/aws-sdk-go/service/ec2"
 
 	test_structure "github.com/gruntwork-io/terratest/modules/test-structure"
 
@@ -36,7 +39,7 @@ func TestVPC(t *testing.T) {
 			"cidr_block":           "172.24.0.0/16",
 			"availability_zones":   azs,
 			"has_multiple_subnets": true,
-			"private_subnet_count": 0,
+			"private_subnet_count": 2,
 			"public_subnet_count":  1,
 			"enable_dns_hostnames": true,
 			"default_tags": map[string]string{
@@ -77,21 +80,42 @@ func TestVPC(t *testing.T) {
 
 			nameTag := fmt.Sprintf("%s-vpc", vpcTagsMap["Environment"])
 			if nameTag != vpc.Name {
-				t.Errorf("incorrect tag value for Name, got: %v, want: %v\n", vpcTagName, vpc.Name)
+				t.Errorf("incorrect tag value for Name, got: %v, want: %v\n", nameTag, vpc.Name)
 			}
 		}
 	})
 }
 
 func checkIsSubnetPublic(t *testing.T, subnets []aws.Subnet, region string) {
-	t.Helper()
+	subnetIds := make([]*string, len(subnets))
 	t.Run("Check if subnets are public", func(t *testing.T) {
 		for _, subnet := range subnets {
-			t.Logf("subnet: %v", subnet)
-			subnetIsPublic := aws.IsPublicSubnet(t, subnet.Id, region)
-			if !subnetIsPublic {
-				t.Errorf("subnet %s is not public. got: %t, want: %t", subnet.Id, subnetIsPublic, true)
+			subnetIds = append(subnetIds, &subnet.Id)
+		}
+		skipPrivateSubnets(t, subnetIds, region)
+	})
+}
+
+// getSubnetTags is a helper function which checks if the VPC Subnet is private by looking at the tag Name and whether it container private in it or not. If it does not, it will be skipped.
+func skipPrivateSubnets(t *testing.T, subnetIds []*string, region string) {
+	t.Helper()
+
+	ec2Client := aws.NewEc2Client(t, region)
+	req, resp := ec2Client.DescribeSubnetsRequest(&ec2.DescribeSubnetsInput{SubnetIds: subnetIds})
+
+	err := req.Send()
+	if err != nil {
+		t.Errorf("err := req.Send() = %v", err)
+	}
+
+	for _, subnet := range resp.Subnets {
+		for _, tag := range subnet.Tags {
+			if *tag.Key == "Name" && !strings.Contains(*tag.Value, "private") {
+				subnetIsPublic := aws.IsPublicSubnet(t, *subnet.SubnetId, region)
+				if !subnetIsPublic {
+					t.Errorf("subnet %s is not public. got: %t, want: %t", *subnet.SubnetId, subnetIsPublic, true)
+				}
 			}
 		}
-	})
+	}
 }
