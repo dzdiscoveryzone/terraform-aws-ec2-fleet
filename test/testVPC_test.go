@@ -40,7 +40,7 @@ func TestVPC(t *testing.T) {
 			"availability_zones":   azs,
 			"has_multiple_subnets": true,
 			"private_subnet_count": 2,
-			"public_subnet_count":  1,
+			"public_subnet_count":  5,
 			"enable_dns_hostnames": true,
 			"default_tags": map[string]string{
 				"Environment":   "dev",

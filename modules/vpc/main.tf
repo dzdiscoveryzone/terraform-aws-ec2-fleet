@@ -28,7 +28,7 @@ resource "aws_subnet" "private" {
   count = var.has_multiple_subnets ? var.private_subnet_count : length(var.availability_zones)
 
   vpc_id                  = aws_vpc.this.id
-  cidr_block              = cidrsubnet(var.cidr_block, 8, count.index + length(var.availability_zones) + 1)
+  cidr_block              = cidrsubnet(var.cidr_block, 8, count.index + length(aws_subnet.public))
   map_public_ip_on_launch = var.map_public_ip_on_launch ? false : true
   availability_zone       = element(var.availability_zones, count.index)
 
@@ -95,10 +95,12 @@ resource "aws_route_table_association" "private" {
 
 // public route tables
 resource "aws_route_table" "public" {
+  count = var.has_multiple_subnets ? var.public_subnet_count : length(var.availability_zones)
+
   vpc_id = aws_vpc.this.id
 
   tags = merge({
-    Name = format("public-subnet-route-table-%v", element(var.availability_zones, 0))
+    Name = format("public-subnet-route-table-%v", element(var.availability_zones, count.index))
   }, var.default_tags)
 }
 

@@ -17,7 +17,3 @@ output "private_subnet_ids" {
 output "availibility_zones" {
   value = var.availability_zones
 }
-
-output "public_subnet_tags" {
-  value = aws_subnet.public.*.tags
-}
