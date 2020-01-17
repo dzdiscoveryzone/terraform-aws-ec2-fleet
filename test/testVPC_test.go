@@ -7,7 +7,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/service/ec2"
 
-	test_structure "github.com/gruntwork-io/terratest/modules/test-structure"
+	teststructure "github.com/gruntwork-io/terratest/modules/test-structure"
 
 	"github.com/gruntwork-io/terratest/modules/aws"
 
@@ -26,7 +26,7 @@ func TestVPC(t *testing.T) {
 	terraformFolderRelativeToRoot := "modules/vpc"
 
 	// Copy the terraform folder to a temp folder
-	tempTestFolder := test_structure.CopyTerraformFolderToTemp(t, rootFolder, terraformFolderRelativeToRoot)
+	tempTestFolder := teststructure.CopyTerraformFolderToTemp(t, rootFolder, terraformFolderRelativeToRoot)
 
 	azs := []string{"us-east-1a", "us-east-1b", "us-east-1e"}
 	terraformOptions := &terraform.Options{

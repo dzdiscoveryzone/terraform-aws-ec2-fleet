@@ -8,6 +8,7 @@ resource "aws_kms_key" "this" {
 }
 
 resource "aws_s3_bucket" "this" {
+  region = var.region
   bucket = var.bucket_name
   acl    = "private"
 
@@ -39,15 +40,15 @@ resource "aws_s3_bucket_public_access_block" "this" {
 
 resource "aws_dynamodb_table" "dynamodb-terraform-state-locking" {
   name           = var.dynamodb_table_name
-  hash_key       = var.dynamodb_table_hask_key
+  hash_key       = "LockID"
   read_capacity  = 10
   write_capacity = 10
 
   attribute {
-    name = var.dynamodb_table_hask_key
+    name = "LockID"
     type = "S"
   }
   tags = merge({
-    "Name" : format("%v-%v-tfstate-dynamodb-table", var.default_tags["Environment"], var.dynamodb_table_name)
+    "Name" : format("%v-%v", var.default_tags["Environment"], var.dynamodb_table_name)
   }, var.default_tags)
 }

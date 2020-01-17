@@ -48,7 +48,7 @@ variable "enable_dns_support" {
 
 variable "availability_zones" {
   description = "AZs for Subnets"
-  type = list(string)
+  type        = list(string)
   default     = []
 }
 
@@ -59,10 +59,10 @@ variable "map_public_ip_on_launch" {
 }
 
 variable "default_tags" {
-  description = ""
+  description = "Default tags to apply"
   type        = map(any)
   default = {
-    Environment = ""
+    Environment = "dev"
     "Is Production" : null
   }
 }

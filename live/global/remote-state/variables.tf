@@ -1,3 +1,9 @@
+variable "region" {
+  description = "Default region"
+  type        = string
+  default     = ""
+}
+
 variable "deletion_window_in_days" {
   description = "amount of days to keep the KMS key after deletion"
   type        = number
@@ -18,12 +24,6 @@ variable "sse_algorithm" {
 
 variable "dynamodb_table_name" {
   description = "Name of the table, must be unique in the deployed to region"
-  type        = string
-  default     = ""
-}
-
-variable "dynamodb_table_hask_key" {
-  description = "The attribute to use as the hash (partition) key"
   type        = string
   default     = ""
 }
