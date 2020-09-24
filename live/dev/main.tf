@@ -17,9 +17,9 @@ terraform {
 
 module "vpc" {
   source               = "../../modules/vpc"
+  create_vpc           = true
   cidr_block           = "172.24.0.0/16"
   availability_zones   = ["us-east-1a", "us-east-1b", "us-east-1c"]
-  has_multiple_subnets = true
   public_subnet_count  = ["172.24.1.0/24", "172.24.2.0/24", "172.24.3.0/24", "172.24.4.0/24", "172.24.7.0/24"]
   private_subnet_count = ["172.24.5.0/24", "172.24.6.0/24"]
   enable_dns_hostnames = true
