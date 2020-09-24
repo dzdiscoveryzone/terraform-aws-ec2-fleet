@@ -4,28 +4,34 @@ variable "region" {
   default     = ""
 }
 
-variable "has_multiple_subnets" {
-  description = "Determines whether the VPC has multiple subnets"
+variable "create_vpc" {
+  description = "Determines whether to create the VPC"
   type        = bool
   default     = false
-}
-
-variable "private_subnet_count" {
-  description = "Number of private subnet to launch inside VPC"
-  type        = number
-  default     = 1
-}
-
-variable "public_subnet_count" {
-  description = "Number of public subnet to launch inside VPC"
-  type        = number
-  default     = 2
 }
 
 variable "cidr_block" {
   description = "Default CIDR Block"
   type        = string
   default     = ""
+}
+
+variable "availability_zones" {
+  description = "AZs for Subnets"
+  type        = list(string)
+  default     = []
+}
+
+variable "public_subnet" {
+  description = "Public subnet(s) to launch inside VPC"
+  type        = list(string)
+  default     = []
+}
+
+variable "private_subnet" {
+  description = "Private subnet(s) to launch inside VPC"
+  type        = list(string)
+  default     = []
 }
 
 variable "instance_tenancy" {
@@ -44,12 +50,6 @@ variable "enable_dns_support" {
   description = "Should be true to enable DNS support in the VPC"
   type        = bool
   default     = true
-}
-
-variable "availability_zones" {
-  description = "AZs for Subnets"
-  type        = list(string)
-  default     = []
 }
 
 variable "map_public_ip_on_launch" {

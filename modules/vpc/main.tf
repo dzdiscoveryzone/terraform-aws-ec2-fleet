@@ -10,12 +10,11 @@ resource "aws_vpc" "this" {
   }, var.default_tags)
 }
 
-# Subnets
 resource "aws_subnet" "public" {
-  count = var.has_multiple_subnets ? var.public_subnet_count : length(var.availability_zones)
+  count = var.create_vpc && length(var.public_subnet) > 0 ? length(var.public_subnet) : 0
 
   vpc_id                  = aws_vpc.this.id
-  cidr_block              = cidrsubnet(var.cidr_block, 8, count.index)
+  cidr_block              = element(concat(var.public_subnet, [""]), count.index)
   map_public_ip_on_launch = var.map_public_ip_on_launch
   availability_zone       = element(var.availability_zones, count.index)
 
@@ -25,10 +24,10 @@ resource "aws_subnet" "public" {
 }
 
 resource "aws_subnet" "private" {
-  count = var.has_multiple_subnets ? var.private_subnet_count : length(var.availability_zones)
+  count = var.create_vpc && length(var.private_subnet) > 0 ? length(var.private_subnet) : 0
 
   vpc_id                  = aws_vpc.this.id
-  cidr_block              = cidrsubnet(var.cidr_block, 8, count.index + length(aws_subnet.public))
+  cidr_block              = element(concat(var.private_subnet, [""]), count.index)
   map_public_ip_on_launch = var.map_public_ip_on_launch ? false : true
   availability_zone       = element(var.availability_zones, count.index)
 
@@ -48,12 +47,12 @@ resource "aws_internet_gateway" "this" {
 
 // EIP required for NAT GW
 resource "aws_eip" "this" {
-  count = var.has_multiple_subnets ? var.private_subnet_count : length(var.availability_zones)
+  count = var.create_vpc && length(var.private_subnet) > 0 ? length(var.private_subnet) : 0
 }
 
 // NAT GW must reside inside the public Subnet
 resource "aws_nat_gateway" "private" {
-  count = var.has_multiple_subnets ? var.private_subnet_count : length(var.availability_zones)
+  count = var.create_vpc && length(var.private_subnet) > 0 ? length(var.private_subnet) : 0
 
   subnet_id     = element(aws_subnet.public.*.id, count.index)
   allocation_id = element(aws_eip.this.*.id, count.index)
@@ -61,7 +60,7 @@ resource "aws_nat_gateway" "private" {
 
 // private route table
 resource "aws_route_table" "private" {
-  count = var.has_multiple_subnets ? var.private_subnet_count : length(var.availability_zones)
+  count = var.create_vpc && length(var.private_subnet) > 0 ? length(var.private_subnet) : 0
 
   vpc_id = aws_vpc.this.id
 
@@ -72,7 +71,7 @@ resource "aws_route_table" "private" {
 
 // route is it's own resource for better modularity
 resource "aws_route" "ngw" {
-  count = var.has_multiple_subnets ? var.private_subnet_count : length(var.availability_zones)
+  count = var.create_vpc && length(var.private_subnet) > 0 ? length(var.private_subnet) : 0
 
   route_table_id         = element(aws_route_table.private.*.id, count.index)
   destination_cidr_block = "0.0.0.0/0"
@@ -87,7 +86,7 @@ resource "aws_route" "ngw" {
 
 // associate public subnet(s) with route table above
 resource "aws_route_table_association" "private" {
-  count = var.has_multiple_subnets ? var.private_subnet_count : length(var.availability_zones)
+  count = var.create_vpc && length(var.private_subnet) > 0 ? length(var.private_subnet) : 0
 
   subnet_id      = element(aws_subnet.private.*.id, count.index)
   route_table_id = element(aws_route_table.private.*.id, count.index)
@@ -95,7 +94,7 @@ resource "aws_route_table_association" "private" {
 
 // public route tables
 resource "aws_route_table" "public" {
-  count = var.has_multiple_subnets ? var.public_subnet_count : length(var.availability_zones)
+  count = var.create_vpc && length(var.public_subnet) > 0 ? length(var.public_subnet) : 0
 
   vpc_id = aws_vpc.this.id
 
@@ -105,7 +104,7 @@ resource "aws_route_table" "public" {
 }
 
 resource "aws_route" "igw" {
-  count = var.has_multiple_subnets ? var.public_subnet_count : length(var.availability_zones)
+  count = var.create_vpc && length(var.public_subnet) > 0 ? length(var.public_subnet) : 0
 
   route_table_id         = element(aws_route_table.public.*.id, count.index)
   destination_cidr_block = "0.0.0.0/0"
@@ -118,20 +117,9 @@ resource "aws_route" "igw" {
   depends_on = [aws_route_table.public]
 }
 
-// TODO: Add default route and see if issue with destroying is resolved
-resource "aws_route" "default" {
-  route_table_id         = aws_vpc.this.default_route_table_id
-  destination_cidr_block = "0.0.0.0/0"
-  gateway_id             = aws_internet_gateway.this.id
-
-  timeouts {
-    create = "5m"
-  }
-}
-
 # associate public subnet(s) with route table above
 resource "aws_route_table_association" "public" {
-  count = var.has_multiple_subnets ? var.public_subnet_count : length(var.availability_zones)
+  count = var.create_vpc && length(var.public_subnet) > 0 ? length(var.public_subnet) : 0
 
   subnet_id      = element(aws_subnet.public.*.id, count.index)
   route_table_id = element(aws_route_table.public.*.id, count.index)
